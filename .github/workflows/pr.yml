@@ -47,7 +47,7 @@ jobs:
           for s in $(find backend -maxdepth 3 -name '*.sln'); do
             dotnet format "$s" --verify-no-changes && dotnet build "$s" -warnaserror -p:StrongNameKeyFile="$RUNNER_TEMP/key.snk"
           done
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with: { node-version: "lts/*" }
       - name: React quality (ESLint, Prettier, TypeScript)
         run: |
@@ -67,7 +67,7 @@ jobs:
           for s in $(find backend -maxdepth 3 -name '*.sln'); do
             dotnet test "$s" --filter "Category!=Integration" /p:CollectCoverage=true /p:Threshold=80 /p:ThresholdType=line -p:StrongNameKeyFile="$RUNNER_TEMP/key.snk"
           done
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with: { node-version: "lts/*" }
       - name: React unit tests (coverage >= 80%)
         run: |
