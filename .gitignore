@@ -1,3 +1,4 @@
+# Secretos (nunca al repositorio; se permite .env.example)
 .env
 .env.*
 !.env.example
@@ -5,4 +6,26 @@
 *.key
 *.snk
 *.pfx
+secrets/
+
+# C#
+bin/
+obj/
+*.user
+TestResults/
+coverage*.xml
+coverage.json
+
+# React / Node
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+.vite/
+
+# IDE / SO
+.idea/
+.vscode/
+.DS_Store
 __pycache__/
