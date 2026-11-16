@@ -29,7 +29,7 @@ jobs:
             (cd "out/$n" && zip -r "$GITHUB_WORKSPACE/dist/$n-$VERSION.zip" .)
           done
           rm -f "$RUNNER_TEMP/key.snk"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with: { node-version: "lts/*" }
       - name: Build React artifacts
         run: |
