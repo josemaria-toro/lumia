@@ -9,7 +9,7 @@ Lumia es una plataforma para la visualización de contenido en streaming.
 - [Casos de uso](docs/use-cases.md)
 - [Construcción, configuración e instalación](docs/installation.md)
 - [Configuración](docs/configuration.md)
-- [Decisiones de arquitectura (ADR)](docs/adr/)
+- [Decisiones de arquitectura (ADR)](docs/adr)
 - [Deuda técnica](docs/technical-debt.md)
 
 ## Objetivos
