@@ -1,0 +1,21 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+  # .NET 10 is an LTS line: stay on 10.x for the framework-aligned packages (security updates are not affected)
+  - package-ecosystem: nuget
+    directory: /backend
+    schedule: { interval: weekly }
+    ignore:
+      - dependency-name: "Microsoft.Extensions.*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Microsoft.AspNetCore.*"
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: npm
+    directory: /frontend/lumia-web
+    schedule: { interval: weekly }
+    ignore:
+      # Node.js typings: only the LTS line in use
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]

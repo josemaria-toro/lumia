@@ -55,8 +55,9 @@ jobs:
         with: { dotnet-version: "10.0.x" }
       - name: C# quality (dotnet format, analyzers, compiler)
         run: |
+          python3 harness/onboarding/scripts/gen_snk.py "$RUNNER_TEMP/key.snk"   # temporary strong-name key
           for s in $(find backend -maxdepth 3 -name '*.sln'); do
-            dotnet format "$s" --verify-no-changes && dotnet build "$s" -warnaserror
+            dotnet format "$s" --verify-no-changes && dotnet build "$s" -warnaserror -p:StrongNameKeyFile="$RUNNER_TEMP/key.snk"
           done
       # [react]
       - uses: actions/setup-node@v4
@@ -85,8 +86,9 @@ jobs:
         with: { dotnet-version: "10.0.x" }
       - name: C# unit tests (coverage >= 80%)
         run: |
+          python3 harness/onboarding/scripts/gen_snk.py "$RUNNER_TEMP/key.snk"
           for s in $(find backend -maxdepth 3 -name '*.sln'); do
-            dotnet test "$s" --filter "Category!=Integration" /p:CollectCoverage=true /p:Threshold=80 /p:ThresholdType=line
+            dotnet test "$s" --filter "Category!=Integration" /p:CollectCoverage=true /p:Threshold=80 /p:ThresholdType=line -p:StrongNameKeyFile="$RUNNER_TEMP/key.snk"
           done
       # [react]
       - uses: actions/setup-node@v4
@@ -124,6 +126,7 @@ jobs:
       - name: C# integration tests (Testcontainers)
         if: needs.changes.outputs.docs_only != 'true'
         run: |
+          python3 harness/onboarding/scripts/gen_snk.py "$RUNNER_TEMP/key.snk"
           for s in $(find backend -maxdepth 3 -name '*.sln'); do
-            dotnet test "$s" --filter "Category=Integration"
+            dotnet test "$s" --filter "Category=Integration" -p:StrongNameKeyFile="$RUNNER_TEMP/key.snk"
           done

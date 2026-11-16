@@ -1,0 +1,25 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+}
+
+main {
+  margin: 0 auto;
+  max-width: 60rem;
+  padding: 1rem;
+}
+
+.catalog {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+  list-style: none;
+  padding: 0;
+}
+
+.catalog li {
+  border: 1px solid currentcolor;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}

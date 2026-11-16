@@ -34,7 +34,7 @@ def _commit_messages(cmd: str) -> list[str]:
     for v in _flag_values(cmd, r"-[a-zA-Z]*m|--message"):
         if not v.startswith("$(") and not v.startswith("`"):
             msgs.append(v)
-    for m in re.finditer(r"<<-?\s*['\"]?(\w+)['\"]?[^\n]*\n(.*?)\n[ \t]*\1[ \t]*(?=\n|\)|$)", cmd, re.S):
+    for m in re.finditer(r"\$\(\s*cat\s*<<-?\s*['\"]?(\w+)['\"]?[^\n]*\n(.*?)\n[ \t]*\1[ \t]*(?=\n|\)|$)", cmd, re.S):
         msgs.append(m.group(2))
     return msgs
 

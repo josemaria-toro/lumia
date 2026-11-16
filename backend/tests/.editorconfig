@@ -1,0 +1,4 @@
+[*.cs]
+# Test names use Method_Scenario style
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.CA1861.severity = none
