@@ -11,7 +11,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Resolve version from branch name
         run: echo "VERSION=${GITHUB_REF_NAME#release/v}" >> "$GITHUB_ENV"
       - run: mkdir -p dist
