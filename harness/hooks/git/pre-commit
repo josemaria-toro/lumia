@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+"""No commits on main (after the initial one), no secrets, SQL scripts named <yymmdd>.sql."""
+import os
+import subprocess
+import sys
+
+import _bootstrap  # noqa: F401
+from lib import common, rules
+
+errors = []
+if common.has_commits() and common.current_branch() in common.MAIN_BRANCHES:
+    errors.append("Commit directo en 'main' prohibido: crea una rama de trabajo.")
+if not all(common.local_identity()):
+    errors.append("Falta la identidad local de git (user.name/user.email).")
+
+staged = subprocess.run(["git", "diff", "--cached", "--name-only", "--diff-filter=AM"],
+                        capture_output=True, text=True).stdout.splitlines()
+for f in staged:
+    base = os.path.basename(f)
+    if base == ".env" or (base.startswith(".env.") and not base.endswith((".example", ".sample", ".template"))) \
+            or base.lower().endswith((".pem", ".key", ".pfx", ".p12", ".snk", ".jks")):
+        errors.append(f"Fichero de secretos/claves no permitido en el repositorio: {f}")
+        continue
+    if f.endswith(".sql") and "/tests/" not in f and "harness/templates" not in f:
+        errors += rules.check_sql_name(base)
+    if f.startswith("harness/templates"):
+        continue
+    blob = subprocess.run(["git", "show", f":{f}"], capture_output=True, text=True, errors="ignore").stdout
+    found = rules.scan_secrets(blob)
+    if found:
+        errors.append(f"{f}: posibles secretos ({', '.join(found)}).")
+if errors:
+    print("🛑 Harness:\n" + "\n".join(f"- {e}" for e in errors), file=sys.stderr)
+    sys.exit(1)

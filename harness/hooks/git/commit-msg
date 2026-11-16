@@ -1,0 +1,11 @@
+#!/usr/bin/env python3
+"""Validates the commit message (Conventional Commits, English, no agent attribution)."""
+import sys
+
+import _bootstrap  # noqa: F401
+from lib import rules
+
+errors = rules.check_conventional(open(sys.argv[1], encoding="utf-8").read(), "El mensaje de commit")
+if errors:
+    print("🛑 Harness:\n" + "\n".join(f"- {e}" for e in errors), file=sys.stderr)
+    sys.exit(1)

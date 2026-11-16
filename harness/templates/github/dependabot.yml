@@ -1,0 +1,32 @@
+# Template: keep only the ecosystems of the selected project types (one entry per project directory).
+# For runtimes/tools with official LTS cycles, limit version updates to a supported LTS line with
+# `ignore` filters (verify the current LTS lines at onboarding time). Libraries without LTS update
+# normally. Security updates are never disabled.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+  # [python] one entry per project: directory: /backend/<project>
+  - package-ecosystem: pip
+    directory: /backend/__PROJECT__
+    schedule: { interval: weekly }
+  # [csharp] one entry per project: directory: /backend/<project>
+  - package-ecosystem: nuget
+    directory: /backend/__PROJECT__
+    schedule: { interval: weekly }
+  # [react] one entry per project: directory: /frontend/<project>
+  - package-ecosystem: npm
+    directory: /frontend/__PROJECT__
+    schedule: { interval: weekly }
+    ignore:
+      # Node.js and its typings: only LTS (even) major lines
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+  # [docker] base images with LTS cycles: only LTS (even) majors for node, etc.
+  - package-ecosystem: docker
+    directory: /
+    schedule: { interval: weekly }
+    ignore:
+      - dependency-name: node
+        versions: ["21.x", "23.x", "25.x", "27.x", "29.x"]

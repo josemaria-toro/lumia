@@ -1,0 +1,29 @@
+schema: spec-driven
+
+context: |
+  Producto: __PRODUCT_NAME__ — __PRODUCT_DESCRIPTION__
+  Tipo de proyecto: __PROJECT_TYPES__ (backend/ y frontend/ en la raíz).
+  Reglas del harness: harness/rules/ (única fuente de verdad). Respétalas siempre.
+  - Arquitectura hexagonal, SOLID, inyección de dependencias por constructor con patrón Options.
+  - Código y comentarios en inglés; especificaciones funcionales y técnicas en español.
+  - Documentación en español en docs/ (mermaid), ADR en docs/adr/, deuda técnica en docs/technical-debt.md.
+  - Ramas: bug|change|chore|feature|hotfix/short-description. Commits y títulos de PR: Conventional Commits en inglés.
+  - Tecnologías admitidas: ver harness/rules/technologies.md (otras requieren ADR).
+  - Pruebas: backend unitarias + integración; frontend E2E; cobertura >= 80 %.
+  - Datos: snake_case, campos de auditoría, scripts <yymmdd>.sql sin migraciones.
+  - Los agentes no se atribuyen cambios en commits ni PRs.
+
+rules:
+  proposal:
+    - Escribir en español.
+    - No cerrar la fase con preguntas abiertas: resolverlas u ofrecer registrarlas en docs/technical-debt.md.
+    - Requiere confirmación explícita del usuario; crear rama propia y persistir la propuesta en un primer commit (local y remoto).
+  specs:
+    - Escribir en español.
+    - Describir requisitos de seguridad aplicables (OWASP ASVS / API Security Top 10).
+  design:
+    - Escribir en español.
+    - Respetar arquitectura hexagonal, DI por constructor y patrón Options; registrar decisiones relevantes como ADR.
+  tasks:
+    - Incluir tareas de pruebas (unitarias, integración o E2E), documentación en docs/ y script <yymmdd>.sql si cambia el modelo de datos.
+    - Cerrar con commit, pull request a main y, tras el merge, archivado en rama propia.

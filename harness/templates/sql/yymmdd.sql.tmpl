@@ -1,0 +1,28 @@
+-- Script <yymmdd>.sql — nombre del fichero = fecha (yymmdd). Sin migraciones.
+-- Lo ya definido en este fichero NO se modifica: los cambios del mismo día se añaden al final con ALTER.
+-- Las contraseñas NO se escriben aquí: se pasan como variables de psql (-v admin_password=... etc.).
+
+CREATE DATABASE __PRODUCT_NAME__;  -- ejecutar conectado a la base de datos 'postgres'
+
+CREATE ROLE __PRODUCT_NAME___admin LOGIN PASSWORD :'admin_password';
+CREATE ROLE __PRODUCT_NAME___app LOGIN PASSWORD :'app_password';
+CREATE ROLE __PRODUCT_NAME___maintenance LOGIN PASSWORD :'maintenance_password';
+
+ALTER DATABASE __PRODUCT_NAME__ OWNER TO __PRODUCT_NAME___admin;
+
+-- \connect __PRODUCT_NAME__
+-- GRANT CONNECT ON DATABASE __PRODUCT_NAME__ TO __PRODUCT_NAME___app, __PRODUCT_NAME___maintenance;
+-- GRANT USAGE ON SCHEMA public TO __PRODUCT_NAME___app, __PRODUCT_NAME___maintenance;
+-- ALTER DEFAULT PRIVILEGES FOR ROLE __PRODUCT_NAME___admin IN SCHEMA public
+--   GRANT SELECT, INSERT, UPDATE ON TABLES TO __PRODUCT_NAME___app, __PRODUCT_NAME___maintenance;
+-- ALTER DEFAULT PRIVILEGES FOR ROLE __PRODUCT_NAME___admin IN SCHEMA public
+--   GRANT DELETE ON TABLES TO __PRODUCT_NAME___maintenance;
+
+-- Plantilla de tabla (todas incluyen auditoría):
+-- CREATE TABLE example_table (
+--     id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+--     created_at  timestamptz NOT NULL DEFAULT now(),
+--     created_by  text,
+--     updated_at  timestamptz NOT NULL DEFAULT now(),
+--     updated_by  text
+-- );

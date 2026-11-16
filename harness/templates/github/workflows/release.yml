@@ -1,0 +1,60 @@
+# Template: triggered when a release/v<version> branch is created. Keep only the blocks of the
+# selected project types. One zip per deployable artifact, attached to the GitHub release
+# together with the configuration/installation instructions (docs/installation.md).
+name: Release
+
+on:
+  push:
+    branches: ["release/v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve version from branch name
+        run: echo "VERSION=${GITHUB_REF_NAME#release/v}" >> "$GITHUB_ENV"
+      - run: mkdir -p dist
+      # [python]
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Build Python artifacts
+        run: |
+          pip install build
+          for d in $(find backend -maxdepth 2 -name pyproject.toml -exec dirname {} \;); do
+            (cd "$d" && SETUPTOOLS_SCM_PRETEND_VERSION="$VERSION" python -m build --outdir "out")
+            (cd "$d/out" && zip -r "$GITHUB_WORKSPACE/dist/$(basename "$d")-$VERSION.zip" .)
+          done
+      # [csharp]
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: "10.0.x" }
+      - name: Build C# artifacts (Release, no debug symbols, strong name)
+        env:
+          STRONG_NAME_KEY: ${{ secrets.STRONG_NAME_KEY }}   # base64 of the private key (.snk)
+        run: |
+          echo "$STRONG_NAME_KEY" | base64 -d > "$RUNNER_TEMP/key.snk"
+          for p in $(grep -rl --include='*.csproj' -E '<OutputType>(Exe|WinExe)</OutputType>|Sdk="Microsoft.NET.Sdk.Web"' backend); do
+            n=$(basename "$p" .csproj)
+            dotnet publish "$p" -c Release -p:Version="$VERSION" -p:DebugType=None -p:DebugSymbols=false \
+              -p:SignAssembly=true -p:AssemblyOriginatorKeyFile="$RUNNER_TEMP/key.snk" -o "out/$n"
+            (cd "out/$n" && zip -r "$GITHUB_WORKSPACE/dist/$n-$VERSION.zip" .)
+          done
+          rm -f "$RUNNER_TEMP/key.snk"
+      # [react]
+      - uses: actions/setup-node@v4
+        with: { node-version: "lts/*" }
+      - name: Build React artifacts
+        run: |
+          for d in $(find frontend -maxdepth 2 -name package.json -exec dirname {} \;); do
+            (cd "$d" && npm ci && npm version --no-git-tag-version "$VERSION" && npm run build && zip -r "$GITHUB_WORKSPACE/dist/$(basename "$d")-$VERSION.zip" dist)
+          done
+      - name: Publish GitHub release (draft first, so the immutable release has all assets)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v$VERSION" dist/*.zip --target "$GITHUB_REF_NAME" --title "v$VERSION" \
+            --notes-file docs/installation.md --draft
+          gh release edit "v$VERSION" --draft=false

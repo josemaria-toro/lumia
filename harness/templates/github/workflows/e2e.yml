@@ -1,0 +1,22 @@
+# Template (React projects): E2E tests run after every merge to main.
+name: E2E
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "lts/*" }
+      - name: Playwright E2E
+        run: |
+          for d in $(find frontend -maxdepth 2 -name package.json -exec dirname {} \;); do
+            (cd "$d" && npm ci && npx playwright install --with-deps && npx playwright test)
+          done

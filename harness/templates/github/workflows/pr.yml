@@ -1,0 +1,129 @@
+# Template: instantiate at onboarding. Keep only the blocks of the selected project types
+# ([python], [csharp], [react]). Job names are the status checks required by the main ruleset.
+name: PR checks
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  pr-title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate Conventional Commits title
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          regex='^(feat|fix|docs|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9][a-z0-9._/-]*\))?!?: .+'
+          if ! [[ "$TITLE" =~ $regex ]]; then
+            echo "::error::PR title must follow Conventional Commits: type(scope): description"; exit 1
+          fi
+
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.diff.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - id: diff
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          other=$(git diff --name-only "$BASE"...HEAD | grep -Ev '^(docs/|openspec/)|\.md$' || true)
+          if [ -z "$other" ]; then echo "docs_only=true" >> "$GITHUB_OUTPUT"; else echo "docs_only=false" >> "$GITHUB_OUTPUT"; fi
+
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # [python]
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Python quality (ruff, ruff format, mypy)
+        run: |
+          for d in $(find backend -maxdepth 2 -name pyproject.toml -exec dirname {} \;); do
+            (cd "$d" && python -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]" \
+              && ruff check . && ruff format --check . && mypy .)
+          done
+      # [csharp]
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: "10.0.x" }
+      - name: C# quality (dotnet format, analyzers, compiler)
+        run: |
+          for s in $(find backend -maxdepth 3 -name '*.sln'); do
+            dotnet format "$s" --verify-no-changes && dotnet build "$s" -warnaserror
+          done
+      # [react]
+      - uses: actions/setup-node@v4
+        with: { node-version: "lts/*" }
+      - name: React quality (ESLint, Prettier, TypeScript)
+        run: |
+          for d in $(find frontend -maxdepth 2 -name package.json -exec dirname {} \;); do
+            (cd "$d" && npm ci && npm run lint && npx prettier --check . && npx tsc --noEmit)
+          done
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # [python]
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Python unit tests (coverage >= 80%)
+        run: |
+          for d in $(find backend -maxdepth 2 -name pyproject.toml -exec dirname {} \;); do
+            (cd "$d" && python -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]" \
+              && pytest -m "not integration" --cov --cov-fail-under=80)
+          done
+      # [csharp]
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: "10.0.x" }
+      - name: C# unit tests (coverage >= 80%)
+        run: |
+          for s in $(find backend -maxdepth 3 -name '*.sln'); do
+            dotnet test "$s" --filter "Category!=Integration" /p:CollectCoverage=true /p:Threshold=80 /p:ThresholdType=line
+          done
+      # [react]
+      - uses: actions/setup-node@v4
+        with: { node-version: "lts/*" }
+      - name: React unit tests (coverage >= 80%)
+        run: |
+          for d in $(find frontend -maxdepth 2 -name package.json -exec dirname {} \;); do
+            (cd "$d" && npm ci && npx vitest run --coverage --coverage.thresholds.lines=80 --coverage.thresholds.functions=80 --coverage.thresholds.branches=80 --coverage.thresholds.statements=80)
+          done
+
+  # Only when there are backend projects. Always runs; docs-only PRs succeed without running the tests.
+  integration-tests:
+    needs: changes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Docs-only change, integration tests skipped
+        if: needs.changes.outputs.docs_only == 'true'
+        run: echo "Only documentation changed; nothing to run."
+      - uses: actions/checkout@v4
+        if: needs.changes.outputs.docs_only != 'true'
+      # [python]
+      - uses: actions/setup-python@v5
+        if: needs.changes.outputs.docs_only != 'true'
+        with: { python-version: "3.12" }
+      - name: Python integration tests (Testcontainers)
+        if: needs.changes.outputs.docs_only != 'true'
+        run: |
+          for d in $(find backend -maxdepth 2 -name pyproject.toml -exec dirname {} \;); do
+            (cd "$d" && python -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]" && pytest -m integration)
+          done
+      # [csharp]
+      - uses: actions/setup-dotnet@v4
+        if: needs.changes.outputs.docs_only != 'true'
+        with: { dotnet-version: "10.0.x" }
+      - name: C# integration tests (Testcontainers)
+        if: needs.changes.outputs.docs_only != 'true'
+        run: |
+          for s in $(find backend -maxdepth 3 -name '*.sln'); do
+            dotnet test "$s" --filter "Category=Integration"
+          done

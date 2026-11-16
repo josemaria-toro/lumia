@@ -1,0 +1,23 @@
+#!/usr/bin/env python3
+"""No pushes to main (after onboarding), no deletion of main/release branches."""
+import sys
+
+import _bootstrap  # noqa: F401
+from lib import common
+
+ZERO = "0" * 40
+errors = []
+for line in sys.stdin:
+    parts = line.split()
+    if len(parts) != 4:
+        continue
+    _, local_sha, remote_ref, _ = parts
+    branch = remote_ref.removeprefix("refs/heads/")
+    protected = branch in common.MAIN_BRANCHES or branch.startswith("release/")
+    if local_sha == ZERO and protected:
+        errors.append(f"No se puede borrar la rama protegida «{branch}».")
+    elif branch in common.MAIN_BRANCHES and common.is_onboarded():
+        errors.append("Push directo a 'main' prohibido: usa una rama y una pull request.")
+if errors:
+    print("🛑 Harness:\n" + "\n".join(f"- {e}" for e in errors), file=sys.stderr)
+    sys.exit(1)
