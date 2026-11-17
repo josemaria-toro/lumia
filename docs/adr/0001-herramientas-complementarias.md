@@ -20,3 +20,5 @@ La tabla de tecnologías admitidas no cubre algunas librerías necesarias para a
 ## Consecuencias
 
 Dependabot ignora las actualizaciones mayores de `Microsoft.Extensions.*`, `Microsoft.AspNetCore.*` y `@types/node`. Hay que revisar ESLint y TypeScript cuando los plugins amplíen su compatibilidad.
+
+El alerta de seguridad de `minimatch` (dependencia transitiva de `typescript-eslint`) se resuelve con `overrides` en `package.json` hacia `minimatch` 11.x solo para `@typescript-eslint/typescript-estree`; puede retirarse cuando `typescript-eslint` actualice su dependencia.
